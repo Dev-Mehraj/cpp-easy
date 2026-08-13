@@ -13,6 +13,7 @@
 #include <string>
 #include <array>
 #include <fstream>
+#include <vector>
 using namespace std;
 #define function auto
 #define null nullptr
@@ -47,6 +48,29 @@ namespace jsk {
         }
         auto warn(auto... args) {
             ((cout  <<"WARNING: " <<args <<" "), ...);
+        }
+        auto log_table(auto& rowArray, auto& columnArray, string rowLabel = "ROW", string columnLabel = "COLUMN") {
+            int rows = rowArray.size();
+            int cols = columnArray.size();
+            int maxRows = rows > cols ? rows : cols;
+
+            cout << rowLabel << "\t\t" << columnLabel << endl;
+            cout << "---------------------------" << endl;
+
+            for (int i = 0; i < maxRows; i++) {
+                if (i < rows) {
+                    cout << rowArray[i];
+                } else {
+                    cout << "-";
+                }
+                cout << "\t\t";
+                if (i < cols) {
+                    cout << columnArray[i];
+                } else {
+                    cout << "-";
+                }
+                cout << endl;
+            }
         }
     };
     inline Console console;
@@ -108,6 +132,61 @@ public:
     }
 };
 inline Array arrayReworked;
+    template<typename T>
+class List {
+    public:
+        vector<T> data;
+
+        List() {}
+        List(initializer_list<T> values) : data(values) {}
+
+        void push(T value) { data.push_back(value); }
+        void pop() { if (!data.empty()) data.pop_back(); }
+        int size() { return (int)data.size(); }
+
+        bool includes(T value) {
+            for (int i = 0; i < (int)data.size(); i++) {
+                if (data[i] EQUAL_TO value) return true;
+            }
+            return false;
+        }
+        int indexOf(T value) {
+            for (int i = 0; i < (int)data.size(); i++) {
+                if (data[i] EQUAL_TO value) return i;
+            }
+            return -1;
+        }
+        void remove(T value) {
+            for (int i = 0; i < (int)data.size(); i++) {
+                if (data[i] EQUAL_TO value) {
+                    data.erase(data.begin() + i);
+                    return;
+                }
+            }
+        }
+        void clear() { data.clear(); }
+
+        void print() {
+            cout << "[";
+            for (int i = 0; i < (int)data.size(); i++) {
+                cout << data[i];
+                if (i < (int)data.size() - 1) cout << ", ";
+            }
+            cout << "]" << endl;
+        }
+
+        T& operator[](int i) { return data[i]; }
+    };
+
+    using IntArray      = List<int>;
+    using StringArray   = List<string>;
+    using CharArray     = List<char>;
+    using DoubleArray   = List<double>;
+    using SizeTArray    = List<size_t>;
+    using ShortArray    = List<short>;
+    using LongArray     = List<long>;
+    using LongLongArray = List<long long>;
+    using BooleanArray  = List<bool>;
 }
 
 
