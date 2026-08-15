@@ -18,6 +18,8 @@ using namespace std;
 #define function auto
 #define null nullptr
 #define let auto
+#define finish return 0;
+
 #define structure struct
 #define OR ||
 #define AND &&
@@ -187,6 +189,72 @@ class List {
     using LongArray     = List<long>;
     using LongLongArray = List<long long>;
     using BooleanArray  = List<bool>;
+    using Size_tArray = List<size_t>;
+
+    class FileReader {
+    public:
+        ifstream file;
+
+        FileReader(string path) {
+            file.open(path);
+        }
+
+        bool exists() {
+            return file.is_open();
+        }
+
+        string readAll() {
+            string content, line;
+            while (getline(file, line)) {
+                content += line + "\n";
+            }
+            return content;
+        }
+
+        StringArray readLines() {
+            StringArray lines;
+            string line;
+            while (getline(file, line)) {
+                lines.push(line);
+            }
+            return lines;
+        }
+
+        void close() {
+            file.close();
+        }
+    };
+
+
+    class FileWriter {
+    public:
+        ofstream file;
+
+        FileWriter(string path, bool append = false) {
+            if (append) {
+                file.open(path, ios::app);
+            } else {
+                file.open(path);
+            }
+        }
+
+        bool exists() {
+            return file.is_open();
+        }
+
+        auto write(auto value) {
+            file << value;
+        }
+
+        auto writeLine(auto value) {
+            file << value << endl;
+        }
+
+        void close() {
+            file.close();
+        }
+    };
+
 }
 
 
