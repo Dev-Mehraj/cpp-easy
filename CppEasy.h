@@ -5,12 +5,19 @@
 // OG english code writing syntax and are having problems with famlilirazing with Cpp syntax!
 // AIM IS TO MAKE CPP SYNTAX AS CLOSE TO READABLE AS POSSIBLE
 // ALSO WITHOUT USING TEMPLATES!!! AVIOD TEMPLATES AND HIGH LEVEL ADVANCED PROGRAMMING!
-// IMPORTANT: Use class after declaring every class so in the main.cpp or any other cpp file doesnt have to declare the class again
+// IMPORTANT: Use class after declaring every class so in the main.cpp or any other cpp file, the user doesnt have to declare the class again
+//
 
 #ifndef CPPEASY_CPPEASY_H
 #define CPPEASY_CPPEASY_H
+#define GLEW_STATIC
+#include <gl/glew.h>
 #include <iostream>
 #include <string>
+#include <glfw/glfw3.h>
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <vector>
@@ -30,7 +37,15 @@ using namespace std;
 #define MUL *
 #define DIV /
 #define repeat(n) for (int repeat_i_ = 0; repeat_i_ < (n); repeat_i_++)
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define BLUE    "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN    "\033[36m"
+#define RESET   "\033[0m"
 namespace jsk {
+
     class Console {
     public:
 
@@ -49,7 +64,7 @@ namespace jsk {
             ((cerr <<args <<" "), ...);
         }
         auto warn(auto... args) {
-            ((cout  <<"WARNING: " <<args <<" "), ...);
+            ((cout  <<YELLOW <<"WARNING: " <<args <<" " <<endl <<RESET), ...);
         }
         auto log_table(auto& rowArray, auto& columnArray, string rowLabel = "ROW", string columnLabel = "COLUMN") {
             int rows = rowArray.size();
@@ -254,8 +269,519 @@ class List {
             file.close();
         }
     };
+    class STRING {
+    public:
+        string reverseString(const string& input) {
+            string reversedString = input;
+            reverse(reversedString.begin(), reversedString.end());
+            return reversedString;
+        }
+
+        bool isPalindrome(const string& input) {
+            return input EQUAL_TO reverseString(input);
+        }
+
+        string palindromeMessage(const string& input) {
+            if (isPalindrome(input)) {
+                return "The word/statement '" + input + "', is a palindrome!";
+            } else {
+                return "The word/statement '" + input + "', is NOT a palindrome!";
+            }
+        }
+        CharArray convertStringToCharArray(const string& input) {
+            CharArray result;
+            for (int i = 0; i < (int)input.size(); i++) {
+                result.push(input[i]);
+            }
+            return result;
+        }
+    };
+     inline STRING strings;
+    class Window {
+    public:
+        GLFWwindow* handle;
+
+        Window(int width, int height, string title) {
+            glfwInit();
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+            handle = glfwCreateWindow(width, height, title.c_str(), null, null);
+            glfwMakeContextCurrent(handle);
+
+            glfwSwapInterval(1); // Enforces VSync (prevents 100% CPU/GPU usage)
+
+            glewExperimental = true;
+            glewInit();
+        }
+
+        bool isOpen() {
+            return !glfwWindowShouldClose(handle);
+        }
+
+        void clear(float r = 0.1f, float g = 0.1f, float b = 0.1f) {
+            glClearColor(r, g, b, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
+
+        void update() {
+            glfwSwapBuffers(handle);
+            glfwPollEvents();
+        }
+
+        void close() {
+            glfwDestroyWindow(handle);
+            glfwTerminate();
+        }
+    };class Camera {
+    public:
+        glm::vec3 position;
+        glm::vec3 front;
+        glm::vec3 up;
+        glm::vec3 right;
+        glm::vec3 worldUp;
+
+        float yaw;
+        float pitch;
+        float moveSpeed;
+        float mouseSensitivity;
+
+        bool firstMouse;
+        float lastX, lastY;
+
+        Camera(float posX = 0.0f, float posY = 2.0f, float posZ = 8.0f) {
+            position = glm::vec3(posX, posY, posZ);
+            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            front = glm::vec3(0.0f, 0.0f, -1.0f);
+
+            yaw = -90.0f;
+            pitch = 0.0f;
+            moveSpeed = 6.0f;
+            mouseSensitivity = 0.1f;
+
+            firstMouse = true;
+            lastX = 400.0f;
+            lastY = 300.0f;
+
+            updateCameraVectors();
+        }
+
+        void moveTo(float x, float y, float z) {
+            position = glm::vec3(x, y, z);
+        }
+
+        void lookAt(float x, float y, float z) {
+            front = glm::normalize(glm::vec3(x, y, z) - position);
+            pitch = glm::degrees(asin(front.y));
+            yaw = glm::degrees(atan2(front.z, front.x));
+            updateCameraVectors();
+        }
+
+        void setSpeed(float speed) {
+            moveSpeed = speed;
+        }
+
+        void setSensitivity(float sensitivity) {
+            mouseSensitivity = sensitivity;
+        }
+
+        // Handles WASD, Space (Up), and Left-Shift (Down) movement
+        void processKeyboard(GLFWwindow* window, float deltaTime) {
+            float velocity = moveSpeed * deltaTime;
+
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+                position += front * velocity;
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                position -= front * velocity;
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+                position -= right * velocity;
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+                position += right * velocity;
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+                position += worldUp * velocity;
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+                position -= worldUp * velocity;
+        }
+
+        // Rotates camera based on mouse movement coordinates
+        void processMouse(float xpos, float ypos, bool constrainPitch = true) {
+            if (firstMouse) {
+                lastX = xpos;
+                lastY = ypos;
+                firstMouse = false;
+            }
+
+            float xoffset = (xpos - lastX) * mouseSensitivity;
+            float yoffset = (lastY - ypos) * mouseSensitivity;
+
+            lastX = xpos;
+            lastY = ypos;
+
+            yaw += xoffset;
+            pitch += yoffset;
+
+            if (constrainPitch) {
+                if (pitch > 89.0f) pitch = 89.0f;
+                if (pitch < -89.0f) pitch = -89.0f;
+            }
+
+            updateCameraVectors();
+        }
+
+        glm::mat4 viewMatrix() {
+            return glm::lookAt(position, position + front, up);
+        }
+
+    private:
+        void updateCameraVectors() {
+            glm::vec3 newFront;
+            newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            newFront.y = sin(glm::radians(pitch));
+            newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            front = glm::normalize(newFront);
+
+            right = glm::normalize(glm::cross(front, worldUp));
+            up = glm::normalize(glm::cross(right, front));
+        }
+    };
+    const string defaultVertexShader = R"(
+#version 330 core
+layout (location = 0) in vec2 aPos;
+uniform vec2 uOffset;
+uniform vec2 uScale;
+void main() {
+    gl_Position = vec4(aPos * uScale + uOffset, 0.0, 1.0);
+}
+)";
+
+    const string defaultFragmentShader = R"(
+#version 330 core
+out vec4 FragColor;
+uniform vec3 uColor;
+void main() {
+    FragColor = vec4(uColor, 1.0);
+}
+)";
+
+    class Shader {
+    public:
+        GLuint program;
+
+        Shader(string vertexSrc = defaultVertexShader, string fragmentSrc = defaultFragmentShader) {
+            GLuint vs = compile(GL_VERTEX_SHADER, vertexSrc);
+            GLuint fs = compile(GL_FRAGMENT_SHADER, fragmentSrc);
+
+            program = glCreateProgram();
+            glAttachShader(program, vs);
+            glAttachShader(program, fs);
+            glLinkProgram(program);
+
+            glDeleteShader(vs);
+            glDeleteShader(fs);
+        }
+
+        GLuint compile(GLenum type, string src) {
+            GLuint shader = glCreateShader(type);
+            const char* src_cstr = src.c_str();
+            glShaderSource(shader, 1, &src_cstr, null);
+            glCompileShader(shader);
+            return shader;
+        }
+
+        void use() {
+            glUseProgram(program);
+        }
+
+        void setColor(float r, float g, float b) {
+            use();
+            GLint loc = glGetUniformLocation(program, "uColor");
+            glUniform3f(loc, r, g, b);
+        }
+    };
+class Object2D {
+public:
+    float x, y;
+    float width, height;
+    glm::vec2 velocity;
+    float mass;
+    bool hasPhysics;
+    GLuint vao, vbo;
+    int vertexCount;
+    GLenum drawMode;
+
+    // Square constructor (existing behavior)
+    Object2D(float posX, float posY, float w, float h) {
+        x = posX;
+        y = posY;
+        width = w;
+        height = h;
+        velocity = glm::vec2(0.0f, 0.0f);
+        mass = 1.0f;
+        hasPhysics = false;
+        setupSquareMesh();
+    }
+
+    void setupSquareMesh() {
+        float vertices[] = {
+            -0.5f, -0.5f,
+             0.5f, -0.5f,
+             0.5f,  0.5f,
+            -0.5f,  0.5f
+        };
+        vertexCount = 4;
+        drawMode = GL_TRIANGLE_FAN;
+        uploadMesh(vertices, sizeof(vertices));
+    }
+
+    void setupCircleMesh(int segments = 32) {
+        vector<float> vertices;
+        vertices.push_back(0.0f); // center point
+        vertices.push_back(0.0f);
+
+        for (int i = 0; i <= segments; i++) {
+            float angle = 2.0f * 3.14159265f * i / segments;
+            vertices.push_back(cos(angle) * 0.5f);
+            vertices.push_back(sin(angle) * 0.5f);
+        }
+
+        vertexCount = segments + 2;
+        drawMode = GL_TRIANGLE_FAN;
+        uploadMesh(vertices.data(), vertices.size() * sizeof(float));
+    }
+
+    void uploadMesh(float* vertexData, size_t byteSize) {
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, byteSize, vertexData, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+    }
+
+    void enablePhysics(float vx = 0.0f, float vy = 0.0f, float objMass = 1.0f) {
+        velocity = glm::vec2(vx, vy);
+        mass = objMass;
+        hasPhysics = true;
+    }
+
+    void applyForce(float fx, float fy) {
+        if (!hasPhysics) return;
+        velocity.x += fx / mass;
+        velocity.y += fy / mass;
+    }
+
+    void update(float deltaTime) {
+        if (!hasPhysics) return;
+        x += velocity.x * deltaTime;
+        y += velocity.y * deltaTime;
+    }
+
+    void moveTo(float newX, float newY) {
+        x = newX;
+        y = newY;
+    }
+
+    void draw(Shader& shader) {
+        shader.use();
+        GLint offsetLoc = glGetUniformLocation(shader.program, "uOffset");
+        GLint scaleLoc = glGetUniformLocation(shader.program, "uScale");
+        glUniform2f(offsetLoc, x, y);
+        glUniform2f(scaleLoc, width, height);
+
+        glBindVertexArray(vao);
+        glDrawArrays(drawMode, 0, vertexCount);
+    }
+
+    void print() {
+        cout << "Object2D [x:" << x << ", y:" << y
+             << ", w:" << width << ", h:" << height << "]" << endl;
+    }
+};
+
+class Ball : public Object2D {
+public:
+    Ball(float posX, float posY, float radius) : Object2D(posX, posY, radius, radius) {
+        setupCircleMesh();
+    }
+};
+
+    const string defaultVertex3DShader = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uProj;
+void main() {
+    gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
+}
+)";
+
+    const string defaultFragment3DShader = R"(
+#version 330 core
+out vec4 FragColor;
+uniform vec3 uColor;
+void main() {
+    FragColor = vec4(uColor, 1.0);
+}
+)";
+
+    class Shader3D : public Shader {
+    public:
+        Shader3D(string vertexSrc = defaultVertex3DShader, string fragmentSrc = defaultFragment3DShader)
+            : Shader(vertexSrc, fragmentSrc) {}
+    };
+class Object3D {
+public:
+    glm::vec3 position;
+    glm::vec3 rotation; // Euler angles in degrees (x, y, z)
+    glm::vec3 scale;
+
+    glm::vec3 velocity;
+    glm::vec3 acceleration;
+    glm::vec3 gravity; // Dynamic per-object gravity vector
+
+    float mass;
+    float drag;        // Air resistance damping factor (0.0 to 1.0)
+    float bounciness;  // Restitution coefficient (0.0 = stops, 1.0 = fully elastic)
+    bool hasPhysics;
+
+    GLuint vao, vbo, ebo;
+    int indexCount;
+
+    Object3D(float posX = 0.0f, float posY = 0.0f, float posZ = 0.0f,
+             float scaleX = 1.0f, float scaleY = 1.0f, float scaleZ = 1.0f) {
+        position = glm::vec3(posX, posY, posZ);
+        rotation = glm::vec3(0.0f);
+        scale = glm::vec3(scaleX, scaleY, scaleZ);
+
+        velocity = glm::vec3(0.0f);
+        acceleration = glm::vec3(0.0f);
+        gravity = glm::vec3(0.0f, -9.81f, 0.0f); // Default Earth gravity
+
+        mass = 1.0f;
+        drag = 0.01f;
+        bounciness = 0.5f;
+        hasPhysics = false;
+
+        setupCubeMesh();
+    }
+
+    void setGravity(float gx, float gy, float gz) {
+        gravity = glm::vec3(gx, gy, gz);
+    }
+
+    void enablePhysics(float vx = 0.0f, float vy = 0.0f, float vz = 0.0f, float objMass = 1.0f) {
+        velocity = glm::vec3(vx, vy, vz);
+        mass = objMass > 0.0f ? objMass : 1.0f;
+        hasPhysics = true;
+    }
+
+    void applyForce(float fx, float fy, float fz) {
+        if (!hasPhysics) return;
+        // Newton's Second Law: F = m * a  =>  a = F / m
+        acceleration += glm::vec3(fx, fy, fz) / mass;
+    }
+
+    void update(float deltaTime) {
+        if (!hasPhysics) return;
+
+        // Combine external forces acceleration with dynamic gravity
+        glm::vec3 totalAcceleration = acceleration + gravity;
+
+        // Integration step
+        velocity += totalAcceleration * deltaTime;
+        velocity *= (1.0f - drag); // Apply air resistance
+        position += velocity * deltaTime;
+
+        // Reset accumulation for frame-based forces
+        acceleration = glm::vec3(0.0f);
+    }
+
+    glm::mat4 modelMatrix() {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, scale);
+        return model;
+    }
+
+    void setupCubeMesh() {
+        float vertices[] = {
+            // Front face
+            -0.5f, -0.5f,  0.5f,   0.5f, -0.5f,  0.5f,   0.5f,  0.5f,  0.5f,  -0.5f,  0.5f,  0.5f,
+            // Back face
+            -0.5f, -0.5f, -0.5f,   0.5f, -0.5f, -0.5f,   0.5f,  0.5f, -0.5f,  -0.5f,  0.5f, -0.5f
+        };
+
+        unsigned int indices[] = {
+            // Front
+            0, 1, 2, 2, 3, 0,
+            // Back
+            5, 4, 7, 7, 6, 5,
+            // Left
+            4, 0, 3, 3, 7, 4,
+            // Right
+            1, 5, 6, 6, 2, 1,
+            // Top
+            3, 2, 6, 6, 7, 3,
+            // Bottom
+            4, 5, 1, 1, 0, 4
+        };
+
+        indexCount = 36;
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+    }
+
+    void draw(Shader& shader, Camera& camera, float aspectRatio = 1.33f) {
+        shader.use();
+
+        glm::mat4 model = modelMatrix();
+        glm::mat4 view = camera.viewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+
+        GLint modelLoc = glGetUniformLocation(shader.program, "uModel");
+        GLint viewLoc  = glGetUniformLocation(shader.program, "uView");
+        GLint projLoc  = glGetUniformLocation(shader.program, "uProj");
+
+        if (modelLoc != -1) glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+        if (viewLoc  != -1) glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+        if (projLoc  != -1) glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
+
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+    }
+};
+
+class Sphere3D : public Object3D {
+public:
+    Sphere3D(float posX, float posY, float posZ, float radius)
+        : Object3D(posX, posY, posZ, radius, radius, radius) {
+        // Inherits dynamic gravity, forces, and motion calculations from Object3D
+    }
+};
 
 }
+
 
 
 
